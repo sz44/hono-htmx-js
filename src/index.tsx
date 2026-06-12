@@ -6,10 +6,11 @@ const app = new Hono()
 type Todo = {
   id: number
   text: string
+  isDone: boolean
   createdAt: Date
 }
 
-const todos: Todo[] = [ {id:0, text:"one", createdAt:new Date()}]
+const todos: Todo[] = [ {id:0, text:"one", isDone:false ,createdAt:new Date()}]
 let nextTodoId = 1
 
 app.get('/', (c) => {
@@ -28,15 +29,47 @@ app.get('/', (c) => {
           const todos = ${raw(JSON.stringify(todos))};
           const todoList = document.querySelector("#todoList");
           for (const todo of todos) {
-            const row = document.createElement("div");
-            row.textContent = todo.text;
-            todoList.appendChild(row);
+            appendTodo(todo);
           }
           const form = document.getElementById('myForm');
-          form.addEventListener('submit', function(event) {
+          const input = document.getElementById('todotext');
+
+          function appendTodo(todo) {
+            const row = document.createElement("div");
+            const text = document.createElement("span")
+            const del = document.createElement("button");
+            const don = document.createElement("button");
+
+            text.textContent = todo.text;
+            del.textContent = "delete";
+            don.textContent = "complete";
+
+            row.appendChild(text);
+            row.appendChild(del);
+            row.appendChild(don);
+            todoList.appendChild(row);
+          }
+
+          
+          form.addEventListener('submit', async function(event) {
             event.preventDefault();
-            console.log('Form submission intercepted!');
+
+            const formData = new FormData(form);
+            const response = await fetch('/submit', {
+              method: 'POST',
+              body: formData
+            });
+            if (!response.ok) {
+              console.error('Failed to create todo');
+              return;
+            }
+            
+            const result = await response.json();
+            appendTodo(result.todo);
+            input.value = '';
+            input.focus();
           });
+          
         </script>
       </div>
     `
@@ -48,15 +81,24 @@ app.post('/submit', async (c) => {
   const body = await c.req.parseBody()
   
   // Access individual fields
-  const todo = String(body['todo'] ?? '').trim()
+  const text = String(body['todo'] ?? '').trim()
 
-  todos.push({
+  if (!text) {
+    return c.json({ message: 'todo text is required' }, 400)
+  }
+
+  const todo = {
     id: nextTodoId++,
-    text: todo,
+    text,
+    isDone: false,
     createdAt: new Date()
-  });
+  }
+
+  todos.push(todo);
 
   return c.json({ message: 'new todo created', todo })
 })
+
+
 
 export default app

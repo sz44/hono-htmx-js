@@ -1,7 +1,8 @@
 {
   "name": "hono_htmx",
   "scripts": {
-    "dev": "bun run --hot src/index.tsx"
+    "dev": "bun run build && bun run --hot src/index.tsx",
+    "build": "bun build ./src/static/client.ts --outfile=./src/static/client.js --target=browser"
   },
   "dependencies": {
     "hono": "^4.12.25"

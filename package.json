@@ -2,7 +2,7 @@
   "name": "hono_htmx",
   "scripts": {
     "dev": "bun run build && bun run --hot src/index.tsx",
-    "build": "bun build ./src/static/client.ts --outfile=./src/static/client.js --target=browser"
+    "build": "bun build ./src/static/hono-client.tsx --outfile=./src/static/hono-client.js --target=browser"
   },
   "dependencies": {
     "hono": "^4.12.25"

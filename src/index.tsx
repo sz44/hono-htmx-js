@@ -19,15 +19,8 @@ app.get("/", (c) => {
         text-decoration: line-through;
       }
     </style>
-    <div>
-      <h1>TODO</h1>
-      <form action="/submit" method="post" id="myForm">
-        <input type="text" name="todo" id="todotext" />
-        <button type="submit">submit</button>
-      </form>
-      <div id="todoList"></div>
-      <script type="module" src="static/client.js"></script>
-    </div>
+    <div id="root"></div>
+    <script type="module" src="static/hono-client.js"></script>
   `);
 });
 app.post("/mark", async (c) => {

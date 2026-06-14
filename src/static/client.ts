@@ -1,36 +1,50 @@
 import type { Todo } from "../types";
 
 const todoList = document.querySelector("#todoList") as HTMLDivElement;
-
-const resp = await fetch("/todos");
-const todos = await resp.json() as Todo[];
-
-for (const todo of todos) {
-  appendTodo(todo);
-}
+const todoItemTemplate = document.querySelector("#todoItemTemplate") as HTMLTemplateElement;
 
 const form = document.getElementById("myForm") as HTMLFormElement;
 const input = document.getElementById("todotext") as HTMLInputElement;
 
 function appendTodo(todo: Todo) {
-  const row = document.createElement("div");
-  const text = document.createElement("span");
-  const del = document.createElement("button");
-  const done = document.createElement("button");
+  const row = todoItemTemplate.content.firstElementChild?.cloneNode(true) as HTMLDivElement;
+  const text = row.querySelector("span") as HTMLSpanElement;
 
+  row.dataset.todoId = String(todo.id);
   text.textContent = todo.text;
-  del.textContent = "delete";
-  done.textContent = todo.isDone ? "undo" : "complete";
+  updateTodoState(row, todo.isDone);
+  todoList.appendChild(row);
+}
 
-  text.classList.toggle("completed-text", todo.isDone);
+function updateTodoState(row: HTMLDivElement, isDone: boolean) {
+  const text = row.querySelector("span") as HTMLSpanElement;
+  const done = row.querySelector('[data-action="toggle"]') as HTMLButtonElement;
 
-  done.addEventListener("click", async function () {
+  text.classList.toggle("completed-text", isDone);
+  done.textContent = isDone ? "undo" : "complete";
+}
+
+todoList.addEventListener("click", async function (event) {
+  const target = event.target;
+
+  if (!(target instanceof HTMLButtonElement)) {
+    return;
+  }
+
+  const row = target.closest("[data-todo-id]") as HTMLDivElement | null;
+  if (!row) {
+    return;
+  }
+
+  const id = Number(row.dataset.todoId);
+
+  if (target.dataset.action === "toggle") {
     const resp = await fetch("/mark", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ id: todo.id }),
+      body: JSON.stringify({ id }),
     });
 
     if (!resp.ok) {
@@ -39,18 +53,17 @@ function appendTodo(todo: Todo) {
     }
 
     const result = await resp.json();
-    todo.isDone = result.todo.isDone;
-    text.classList.toggle("completed-text", todo.isDone);
-    done.textContent = todo.isDone ? "undo" : "complete";
-  });
+    updateTodoState(row, result.todo.isDone);
+    return;
+  }
 
-  del.addEventListener("click", async function () {
+  if (target.dataset.action === "delete") {
     const resp = await fetch("/delete", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ id: todo.id }),
+      body: JSON.stringify({ id }),
     });
 
     if (!resp.ok) {
@@ -59,13 +72,8 @@ function appendTodo(todo: Todo) {
     }
 
     row.remove();
-  });
-
-  row.appendChild(text);
-  row.appendChild(del);
-  row.appendChild(done);
-  todoList.appendChild(row);
-}
+  }
+});
 
 form.addEventListener("submit", async function (event) {
   event.preventDefault();

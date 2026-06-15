@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { Hono, MiddlewareHandler } from "hono";
 import { html } from "hono/html";
 import type { Todo } from "./types";
 import { serveStatic } from "hono/bun";
@@ -6,8 +6,16 @@ import { serveStatic } from "hono/bun";
 
 const app = new Hono();
 
-app.use("/static/*", serveStatic({ root: "./src" }));
-// app.use("/client.js", serveStatic({ path: "./src/static/client.js" }));
+const allow = true;
+const middleware_test:MiddlewareHandler = async (c, next) => {
+  if (!allow) {
+    return;
+  }
+  await next()
+}
+
+// app.use("/static/*", serveStatic({ root: "./src" }));
+app.use("/static/client.js", middleware_test, serveStatic({ path: "./src/static/client.js" }));
 
 const todos: Todo[] = [{ id: 0, text: "one", isDone: false, createdAt: new Date() }];
 let nextTodoId = 1;
@@ -45,7 +53,7 @@ app.get("/", (c) => {
           <button type="button" data-action="toggle"></button>
         </div>
       </template>
-      <script type="module" src="static/client.js"></script>
+      <script type="module" src="/static/client.js"></script>
     </div>
   `);
 });
